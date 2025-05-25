@@ -43,10 +43,13 @@ def extract_input_output(extracted_content, problem_type):
         
 
 
-
 def solver_pipeline(prompt: str, model, tokenizer, problem_type: str = "code_o") -> int:
+    # Determine device
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model = model.to(device)
+    
     # 1. Generate response from LLM
-    input_ids = tokenizer(prompt, return_tensors="pt")
+    input_ids = tokenizer(prompt, return_tensors="pt").to(device)
     print('starting')
     with torch.no_grad():
         output_ids = model.generate(
@@ -56,6 +59,9 @@ def solver_pipeline(prompt: str, model, tokenizer, problem_type: str = "code_o")
             temperature=0.7,
             pad_token_id=tokenizer.eos_token_id
         )
+    
+    # Move output back to CPU for decoding
+    output_ids = output_ids.cpu()
     
     # 2. Decode the response
     response = tokenizer.decode(output_ids[0], skip_special_tokens=True)
