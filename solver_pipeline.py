@@ -47,10 +47,11 @@ def extract_input_output(extracted_content, problem_type):
 def solver_pipeline(prompt: str, model, tokenizer, problem_type: str = "code_o") -> int:
     # 1. Generate response from LLM
     input_ids = tokenizer(prompt, return_tensors="pt")
+    print('starting generation')
     with torch.no_grad():
         output_ids = model.generate(
             **input_ids,
-            max_new_tokens=512,
+            max_new_tokens=20,
             do_sample=True,
             temperature=0.7,
             pad_token_id=tokenizer.eos_token_id
@@ -59,7 +60,7 @@ def solver_pipeline(prompt: str, model, tokenizer, problem_type: str = "code_o")
     # 2. Decode the response
     response = tokenizer.decode(output_ids[0], skip_special_tokens=True)
     generation = response.split(prompt)[-1].strip()
-    
+    print(f'generated response: {generation}')
     # 3. Extract answer based on problem type
     extracted_content = extract_answer(generation, problem_type=problem_type)  # how should the answer look like tho?
     if not extracted_content:
