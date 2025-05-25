@@ -49,7 +49,7 @@ def solver_pipeline(prompt: str, model, tokenizer, problem_type: str = "code_o")
     input_ids = tokenizer(prompt, return_tensors="pt")
     with torch.no_grad():
         output_ids = model.generate(
-            input_ids['input_ids'],
+            **input_ids,
             max_new_tokens=512,
             do_sample=True,
             temperature=0.7,
