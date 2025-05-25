@@ -47,7 +47,7 @@ def extract_input_output(extracted_content, problem_type):
 def solver_pipeline(prompt: str, model, tokenizer, problem_type: str = "code_o") -> int:
     # 1. Generate response from LLM
     input_ids = tokenizer(prompt, return_tensors="pt")
-    print('starting generation')
+    print('starting')
     with torch.no_grad():
         output_ids = model.generate(
             **input_ids,
@@ -87,3 +87,10 @@ task_prompt = code_o_solver_prompt.format(snippet="""def f(x: int):
                                           return x**2""", input_args='3')
 prompt = instruction_following.format(task_prompt)
 
+from transformers import AutoModelForCausalLM, AutoTokenizer
+# from solver_pipeline import prompt, solver_pipeline
+# Load model and tokenizer
+model_name = "Qwen/Qwen3-4B"
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+model = AutoModelForCausalLM.from_pretrained(model_name)
+print(f'answer: {solver_pipeline(prompt, model, tokenizer)}')
