@@ -59,8 +59,6 @@ def solver_pipeline(prompt: str, model, tokenizer, snippet, input_arg, problem_t
     print('[INFO] Starting LLM generation')
     with torch.no_grad():
         MAX_TOKENS = 256
-        
-            
         output_ids = model.generate(
             **input_ids,
             max_new_tokens=MAX_TOKENS,
@@ -83,13 +81,15 @@ def solver_pipeline(prompt: str, model, tokenizer, snippet, input_arg, problem_t
     # 3. Extract answer based on problem type
     extracted_content = extract_answer(generation, problem_type=problem_type)  # how should the answer look like tho?
     if not extracted_content:
-        print("[ERROR] Failed to extract answer content")
+        print("[WARNING] Failed to extract answer content, no answer tags")
         return -1
         
     # 4. Parse and validate based on problem type
     if problem_type.endswith('code_o'):
         answer = extract_input_output(extracted_content, problem_type=problem_type)
         print(f"[INFO] Extracted answer: {answer}")
+        if not answer:
+            return -1 # no output tags
     # elif problem_type.endswith('code_o'):
     #     answer = extract_input_output(extracted_content)
     # elif problem_type.endswith('code_f'):
