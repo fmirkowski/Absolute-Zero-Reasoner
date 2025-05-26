@@ -89,15 +89,15 @@ def solver_pipeline(prompt: str, model, tokenizer, snippet, input_arg, problem_t
 
 # Specific for deduction not really modular, we can jusyt do :None later on
 snippet = """def f(x: int):
-return x**2"""
+    return x**2"""
 input_args = '3'
 task_prompt = code_o_solver_prompt.format(snippet=snippet, input_args=input_args)
 prompt = instruction_following.format(task_prompt)
-
+validate_answer(9, 1, snippet, input_args)
 from transformers import AutoModelForCausalLM, AutoTokenizer
 # from solver_pipeline import prompt, solver_pipeline
 # Load model and tokenizer
-model_name = "Qwen/Qwen3-4B"
-tokenizer = AutoTokenizer.from_pretrained(model_name)
-model = AutoModelForCausalLM.from_pretrained(model_name)
-print(f'answer: {solver_pipeline(prompt, model, tokenizer, snippet, input_args)}')
+# model_name = "Qwen/Qwen3-4B"
+# tokenizer = AutoTokenizer.from_pretrained(model_name)
+# model = AutoModelForCausalLM.from_pretrained(model_name)
+# print(f'answer: {solver_pipeline(prompt, model, tokenizer, snippet, input_args)}')
