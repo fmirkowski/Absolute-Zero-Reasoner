@@ -1,6 +1,6 @@
 code_o_solver_prompt = """
 # Task: Deduce the Output of a Python Code Snippet Given the Code and Input
-Given the following Code Snippet and the Input, think step by step then deduce the output that will be produced from plugging the Input into the Code Snippet. Put your output in ```output``` tags. Remember if the output is a string, wrap it in quotes. If the function returns multiple values, remember to use a tuple to wrap them.
+Given the following Code Snippet and the Input, think step by step then deduce the output that will be produced from plugging the Input into the Code Snippet. Put your output in ```output``` tags, remember they have to be in <answer></answer> tags! Remember if the output is a string, wrap it in quotes. If the function returns multiple values, remember to use a tuple to wrap them.
 
 # Code Snippet:
 ```python

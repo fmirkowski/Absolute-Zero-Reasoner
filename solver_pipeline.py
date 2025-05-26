@@ -1,7 +1,7 @@
 import torch
 from data.prompts import code_o_solver_prompt, instruction_following
 from py_execution.validate_answer import validate_answer
-
+from tqdm import tqdm
 """
 PROMPT/TASK (from proposer) -> LLM soluton -> Python filters, construct valid reasoning questions (??) -> binary accuracy reward 
 
@@ -17,7 +17,7 @@ Advices: keep stuff modular, like those code_i, ...
 def extract_answer(content, problem_type):
     """Extract content between <answer></answer> tags from the LLM response"""
     try:
-        print(f'[INFO] Content passed to extract answer and think tags: {content}')
+        # print(f'[INFO] Content passed to extract answer and think tags: {content}')
         start_idx = content.find("<answer>") + len("<answer>")
         end_idx = content.find("</answer>")
         if start_idx == -1 or end_idx == -1:
@@ -58,12 +58,15 @@ def solver_pipeline(prompt: str, model, tokenizer, snippet, input_arg, problem_t
     input_ids = tokenizer(prompt, return_tensors="pt").to(device)
     print('[INFO] Starting LLM generation')
     with torch.no_grad():
+        MAX_TOKENS = 256
+        
+            
         output_ids = model.generate(
             **input_ids,
-            max_new_tokens=256,
+            max_new_tokens=MAX_TOKENS,
             do_sample=True,
             temperature=0.7,
-            pad_token_id=tokenizer.eos_token_id
+            pad_token_id=tokenizer.eos_token_id,
         )
     
     # Move output back to CPU for decoding
@@ -71,7 +74,10 @@ def solver_pipeline(prompt: str, model, tokenizer, snippet, input_arg, problem_t
     
     # 2. Decode the response
     response = tokenizer.decode(output_ids[0], skip_special_tokens=True)
+    print(f'[INFO] THE WHOLE Generated response: {response}\n\n')
+
     generation = response.split(prompt)[-1].strip()
+    generation = '<think>' + generation
     print(f'[INFO] Generated response: {generation}')
     
     # 3. Extract answer based on problem type
