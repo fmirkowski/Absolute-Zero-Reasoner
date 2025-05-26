@@ -17,6 +17,7 @@ Advices: keep stuff modular, like those code_i, ...
 def extract_answer(content, problem_type):
     """Extract content between <answer></answer> tags from the LLM response"""
     try:
+        print(f'[INFO] Content passed to extract answer and think tags: {content}')
         start_idx = content.find("<answer>") + len("<answer>")
         end_idx = content.find("</answer>")
         if start_idx == -1 or end_idx == -1:
