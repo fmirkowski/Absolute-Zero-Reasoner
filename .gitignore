@@ -2,5 +2,5 @@
 .env
 /data/__pycache__
 /py_execution/__pycache__
-__pycache__
+/__pycache__
 runpod.sh
