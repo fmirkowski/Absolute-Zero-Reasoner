@@ -1,6 +1,6 @@
 import torch
 from data.prompts import code_o_solver_prompt, instruction_following
-
+from py_execution.validate_answer import validate_answer
 
 """
 PROMPT/TASK (from proposer) -> LLM soluton -> Python filters, construct valid reasoning questions (??) -> binary accuracy reward 
@@ -43,8 +43,9 @@ def extract_input_output(extracted_content, problem_type):
         
 
 
-def solver_pipeline(prompt: str, model, tokenizer, problem_type: str = "code_o") -> int:
+def solver_pipeline(prompt: str, model, tokenizer, snippet, input_arg, problem_type: str = "code_o") -> int:
     # Determine device
+    # We tak snipet and input_arg, this is specific for a deduction task
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = model.to(device)
     
@@ -83,14 +84,14 @@ def solver_pipeline(prompt: str, model, tokenizer, problem_type: str = "code_o")
     
     # 5. Execute validation (you'll need a PythonExecutor instance)
     # This is where the binary reward is determined
-    # return validate_answer(answer, ground_truth, problem_type)
-    return answer
+    return validate_answer(answer, ground_truth, snippet, input_arg, problem_type)
+    # return answer
 
-
-
-
-task_prompt = code_o_solver_prompt.format(snippet="""def f(x: int):
-                                          return x**2""", input_args='3')
+# Specific for deduction not really modular, we can jusyt do :None later on
+snippet = """def f(x: int):
+return x**2"""
+input_args = '3'
+task_prompt = code_o_solver_prompt.format(snippet=snippet, input_args=input_args)
 prompt = instruction_following.format(task_prompt)
 
 from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -99,4 +100,4 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 model_name = "Qwen/Qwen3-4B"
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 model = AutoModelForCausalLM.from_pretrained(model_name)
-print(f'answer: {solver_pipeline(prompt, model, tokenizer)}')
+print(f'answer: {solver_pipeline(prompt, model, tokenizer, snippet, input_args)}')
