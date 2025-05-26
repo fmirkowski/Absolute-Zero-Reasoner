@@ -20,13 +20,13 @@ def extract_answer(content, problem_type):
         # print(f'[INFO] Content passed to extract answer and think tags: {content}')
         start_idx = content.find("<answer>") + len("<answer>")
         end_idx = content.find("</answer>")
-        if start_idx == -1 or end_idx == -1:
+        if start_idx == -1 + len("<answer>") or end_idx == -1:
             print("[WARNING] Could not find answer tags in content")
             return None
         
         start_idx_think = content.find("<think>") + len("<think>")
         end_idx_think = content.find("</think>")
-        if start_idx_think == -1 or end_idx_think == -1:
+        if start_idx_think == -1 +len("<think>") or end_idx_think == -1:
             print("[WARNING] Could not find think tags in content")
             return None
         think_content = content[start_idx_think:end_idx_think].strip()
