@@ -7,8 +7,10 @@ This is an experimental implementation of the [Absolute Zero paradigm](https://a
 
 This project is actively under development. Currently implementing:
 
-- GRPO (Gradient-based Reasoning Policy Optimization) to test and validate the solver component
-- Basic solver pipeline for deductive reasoning tasks
-- Instruction following and answer validation mechanisms
+- Group Relative Policy Optimization (GRPO) to test and validate the solver component
+
+
+
+
 
 
