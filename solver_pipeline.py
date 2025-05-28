@@ -47,39 +47,39 @@ def extract_input_output(extracted_content, problem_type):
         print(f"[ERROR] Error extracting input/output: {str(e)}")
         return None
         
-def solver_pipeline(prompt: str, model, tokenizer, snippet, input_arg, problem_type: str = "code_o") -> int:
+def reward_fn(output, snippet, input_arg, problem_type: str = "code_o") -> int:
     # Determine device
     # We tak snipet and input_arg, this is specific for a deduction task
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"[INFO] Using device: {device}")
-    model = model.to(device)
+    # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    # print(f"[INFO] Using device: {device}")
+    # model = model.to(device)
     
-    # 1. Generate response from LLM
-    input_ids = tokenizer(prompt, return_tensors="pt").to(device)
-    print('[INFO] Starting LLM generation')
-    with torch.no_grad():
-        MAX_TOKENS = 256
-        output_ids = model.generate(
-            **input_ids,
-            max_new_tokens=MAX_TOKENS,
-            do_sample=True,
-            temperature=0.7,
-            pad_token_id=tokenizer.eos_token_id,
-        )
+    # # 1. Generate response from LLM
+    # input_ids = tokenizer(prompt, return_tensors="pt").to(device)
+    # print('[INFO] Starting LLM generation')
+    # with torch.no_grad():
+    #     MAX_TOKENS = 256
+    #     output_ids = model.generate(
+    #         **input_ids,
+    #         max_new_tokens=MAX_TOKENS,
+    #         do_sample=True,
+    #         temperature=0.7,
+    #         pad_token_id=tokenizer.eos_token_id,
+    #     )
     
-    # Move output back to CPU for decoding
-    output_ids = output_ids.cpu()
+    # # Move output back to CPU for decoding
+    # output_ids = output_ids.cpu()
     
-    # 2. Decode the response
-    response = tokenizer.decode(output_ids[0], skip_special_tokens=True)
-    print(f'[INFO] THE WHOLE Generated response: {response}\n\n')
+    # # 2. Decode the response
+    # response = tokenizer.decode(output_ids[0], skip_special_tokens=True)
+    # print(f'[INFO] THE WHOLE Generated response: {response}\n\n')
 
-    generation = response.split(prompt)[-1].strip()
-    generation = '<think>' + generation
-    print(f'[INFO] Generated response: {generation}')
+    # generation = response.split(prompt)[-1].strip()
+    # generation = '<think>' + generation
+    # print(f'[INFO] Generated response: {generation}')
     
     # 3. Extract answer based on problem type
-    extracted_content = extract_answer(generation, problem_type=problem_type)  # how should the answer look like tho?
+    extracted_content = extract_answer(output, problem_type=problem_type)  # how should the answer look like tho?
     if not extracted_content:
         print("[WARNING] Failed to extract answer content, no answer tags")
         return -1
@@ -116,5 +116,5 @@ model_name = "Qwen/Qwen3-4B"
 print(f"[INFO] Loading model: {model_name}")
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 model = AutoModelForCausalLM.from_pretrained(model_name)
-result = solver_pipeline(prompt, model, tokenizer, snippet, input_args)
+result = reward_fn(prompt, model, tokenizer, snippet, input_args)
 print(f'[INFO] Final answer: {result}')
