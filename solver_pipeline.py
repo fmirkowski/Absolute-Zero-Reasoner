@@ -74,12 +74,12 @@ def reward_fn(output, snippet, input_arg, problem_type: str = "code_o") -> int:
     # response = tokenizer.decode(output_ids[0], skip_special_tokens=True)
     # print(f'[INFO] THE WHOLE Generated response: {response}\n\n')
 
-    # generation = response.split(prompt)[-1].strip()
-    # generation = '<think>' + generation
+    generation = output.split(prompt)[-1].strip()
+    generation = '<think>' + generation
     # print(f'[INFO] Generated response: {generation}')
     
     # 3. Extract answer based on problem type
-    extracted_content = extract_answer(output, problem_type=problem_type)  # how should the answer look like tho?
+    extracted_content = extract_answer(generation, problem_type=problem_type)  # how should the answer look like tho?
     if not extracted_content:
         print("[WARNING] Failed to extract answer content, no answer tags")
         return -1

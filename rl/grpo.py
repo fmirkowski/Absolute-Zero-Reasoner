@@ -28,10 +28,16 @@ class GRPOTtrainer:
             )
             # [G_samples, seq_leng]
             # Move output back to CPU for decoding
-            # output_ids = output_ids.cpu()
-            
+            output_ids = output_ids.cpu()
+            print(f'Computed G samples ')
             # 2. Decode the response
-          
+            for i in range(G_samples):
+                all_responses.append(self.tokenizer.decode(output_ids[i], skip_special_tokens=True))
+
+            
+            # 3. Compute rewards for every compeltion:
+
+            rewards = [self.reward_fn(response) for response in all_responses]
             # generation = response.split(prompt)[-1].strip()
 
 
