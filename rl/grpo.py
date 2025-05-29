@@ -7,7 +7,7 @@ class GRPOTtrainer:
         self.model = model
         self.tokenizer = tokenizer
         self.reward_fn = reward_fn
-        self.optimizer = torch.optim.AdamW(model.parameters, lr=1e-6)
+        self.optimizer = torch.optim.AdamW(model.parameters(), lr=1e-6)
         self.device = device
         self.ref_model = model
     # input args and snippet are deduction specific ones
