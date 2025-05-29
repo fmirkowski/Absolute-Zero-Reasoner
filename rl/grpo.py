@@ -49,8 +49,11 @@ class GRPOTtrainer:
         print('\n\n', torch.softmax(all_gen_logits[0], dim=-1), '\n\n', torch.softmax(all_gen_logits[1], dim=-1), '\n\n')
         log_probs = F.log_softmax(all_gen_logits, dim=-1)
 
-        new_log_probs = self.forward_get_log_probs(self.model, input_ids.input_ids, generated)
+        new_log_probs = self.forward_get_log_probs(self.new_model, input_ids.input_ids, generated)
+        self.old_model = self.new_model.copy() # switch because we already computed stuff
 
+        # after that we will do backprop on the new model, nice
+        
         # Move output back to CPU for decoding
         output_ids.sequences = output_ids.sequences.cpu()
         print(f'Computed G samples')
