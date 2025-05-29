@@ -45,6 +45,8 @@ class GRPOTtrainer:
         # generation = response.split(prompt)[-1].strip()
         mean_reward = torch.mean(rewards)
         std_reward = torch.std(rewards)
+        # Standardize rewards using vectorized operations
+        advantages = (rewards - mean_reward) / std_reward
         print(std_reward)
 
         pass
