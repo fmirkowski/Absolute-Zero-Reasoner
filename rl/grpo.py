@@ -31,7 +31,7 @@ class GRPOTtrainer:
             # [G_samples, seq_leng]
             # Move output back to CPU for decoding
         output_ids = output_ids.cpu()
-        print(f'Computed G samples ')
+        print(f'Computed G samples')
         # 2. Decode the response
         for i in range(G_samples):
             all_responses.append(self.tokenizer.decode(output_ids[i], skip_special_tokens=True))
@@ -39,8 +39,9 @@ class GRPOTtrainer:
         
         # 3. Compute rewards for every compeltion:
 
-        rewards = [self.reward_fn(response, prompt, input_args, snippet) for response in all_responses]
+        rewards = torch.tensor([self.reward_fn(response, prompt, input_args, snippet) for response in all_responses])
         print(rewards)
+        
         # generation = response.split(prompt)[-1].strip()
         mean_reward = torch.mean(rewards)
         std_reward = torch.std(rewards)
