@@ -13,6 +13,7 @@ class GRPOTtrainer:
         self.new_model = model
         self.old_model = model 
         self.G_samples = 2
+        self.EPSILON = 0.9
     # input args and snippet are deduction specific ones
     def train_step(self, prompt, input_args, snippet):
         all_responses = [] # [G,]
@@ -80,6 +81,8 @@ class GRPOTtrainer:
             #remember to divide by G afterwards
             for t in range(log_probs.shape[-1]):
                 #remember to divide by G afterwards
+                log_d = new_log_probs[i, t] / log_probs[i, t]
+                ppo_sur = min(log_d * advantages[i], torch.clip(log_d, 1-self.EPSILON, 1+self.EPSILON) * advantages[i])
                 
         pass
 
