@@ -51,7 +51,7 @@ class GRPOTtrainer:
         all_gen_logits = torch.gather(logits, dim=-1, index=sequences.unsqueeze(-1)).squeeze(-1)
         # Apply mask to exclude pad tokens
         all_gen_logits = all_gen_logits * attention_mask
-        print('\n\n', torch.softmax(all_gen_logits[0]), '\n\n', torch.softmax(all_gen_logits[0]), '\n\n')
+        print('\n\n', torch.softmax(all_gen_logits[0], dim=-1), '\n\n', torch.softmax(all_gen_logits[1], dim=-1), '\n\n')
         log_probs = F.log_softmax(all_gen_logits, dim=-1)
 
         # Move output back to CPU for decoding
