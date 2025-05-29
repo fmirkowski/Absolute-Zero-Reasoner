@@ -41,15 +41,16 @@ class GRPOTtrainer:
         sequences = output_ids.sequences[:, prompt_length:]
         generated = sequences.copy()
         # Create attention mask (1 for real tokens, 0 for padding)
-        attention_mask = (sequences != self.tokenizer.pad_token_id).float()
-        
+        # attention_mask = (sequences != self.tokenizer.pad_token_id).float()
+        padding_starts = (sequences == self.tokenizer.pad_token_id).nonzero(as_tuple=True)[1]
         all_gen_logits = torch.gather(logits, dim=-1, index=sequences.unsqueeze(-1)).squeeze(-1)
         # Apply mask to exclude pad tokens
-        all_gen_logits = all_gen_logits * attention_mask
+        all_gen_logits = all_gen_logits[padding_starts:]
         print('\n\n', torch.softmax(all_gen_logits[0], dim=-1), '\n\n', torch.softmax(all_gen_logits[1], dim=-1), '\n\n')
-        log_probs = F.log_softmax(all_gen_logits, dim=-1)
-
-        new_log_probs = self.forward_get_log_probs(self.new_model, input_ids.input_ids, generated)
+        log_probs = F.log_softmax(all_gen_logits, dim=-1).reshape(self.G_samples, -1)
+        new_log_probs = self.forward_get_log_probs(self.new_model, input_ids.input_ids, generated).reshape(self.G_samples, -1)
+        new_log_probs = new_log_probs[padding_starts:]
+        assert log_probs.shape == new_log_probs.shape
         self.old_model = self.new_model.copy() # switch because we already computed stuff
 
         # after that we will do backprop on the new model, nice
@@ -74,6 +75,12 @@ class GRPOTtrainer:
         advantages = (rewards - mean_reward) / std_reward if std_reward > 0 else torch.zeros_like(rewards)
         print(std_reward)
 
+        # objkective computation
+        for i in range(self.G_samples):
+            #remember to divide by G afterwards
+            for t in range(log_probs.shape[-1]):
+                #remember to divide by G afterwards
+                
         pass
 
     def forward_get_log_probs(self, model, input, output_gen):
