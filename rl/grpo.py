@@ -10,8 +10,8 @@ class GRPOTtrainer:
         self.optimizer = torch.optim.AdamW(model.parameters(), lr=1e-6)
         self.device = device
         self.ref_model = model
-        self.new_model = model
-        self.old_model = model 
+        self.new_model = model.deepcopy()
+        self.old_model = model.deepcopy()
         self.G_samples = 2
         self.EPSILON = 0.9
         self.BETA = 0.2
@@ -41,7 +41,7 @@ class GRPOTtrainer:
         # more parallerlizable version:
         prompt_length = input_ids.input_ids.shape[1]  # Get length of input prompt
         sequences = output_ids.sequences[:, prompt_length:]
-        generated = sequences.copy()
+        generated = sequences
         # Create attention mask (1 for real tokens, 0 for padding)
         # attention_mask = (sequences != self.tokenizer.pad_token_id).float()
         padding_starts = (sequences == self.tokenizer.pad_token_id).nonzero(as_tuple=True)[1]
@@ -57,7 +57,7 @@ class GRPOTtrainer:
 
         refference_log_probs = self.forward_get_log_probs(self.ref_model, input_ids.input_ids, generated).reshape(self.G_samples, -1)
         refference_log_probs = refference_log_probs[padding_starts:]
-        self.old_model = self.new_model.copy() # switch because we already computed stuff
+        self.old_model = self.new_model.deepcopy() # switch because we already computed stuff
 
         # after that we will do backprop on the new model, nice
 
@@ -87,9 +87,9 @@ class GRPOTtrainer:
             for t in range(log_probs.shape[-1]):
                 #remember to divide by G afterwards
                 log_d = new_log_probs[i, t] / log_probs[i, t]
-                ppo_sur = min(log_d * advantages[i], torch.clip(log_d, 1-self.EPSILON, 1+self.EPSILON) * advantages[i])
-                kl_divergence = refference_log_probs[i, t] / new_log_probs[i, t] - torch.log(refference_log_probs[i, t] / new_log_probs[i, t]) - 1
-                loss = ppo_sur - kl_divergence
+                ppo_sur = torch.min(log_d * advantages[i], torch.clip(log_d, 1-self.EPSILON, 1+self.EPSILON) * advantages[i])
+                kl_divergence = torch.exp(refference_log_probs[i, t]) * (refference_log_probs[i, t] - new_log_probs[i, t])
+                loss = ppo_sur - kl_divergence * self.BETA
             loss = loss / log_probs.shape[-1]
         loss = loss / self.G_samples
         pass
