@@ -26,15 +26,26 @@ class GRPOTtrainer:
                 do_sample=True,
                 temperature=0.7,
                 pad_token_id=self.tokenizer.eos_token_id,
-                num_return_sequences=G_samples
+                num_return_sequences=G_samples,
+                output_scores=True,
+                return_dict_in_generate=True
             )
-            # [G_samples, seq_leng]
+        # all_gen_logits_single = torch.tensor([])
+        # all_gen_logits = torch.tensor([])
+        logits = torch.stack(output_ids.scores, dim=1)  # Shape: [G_samples, max_tokens, vocab_size]
+        # for j in range(G_samples):
+        #     for i in range(MAX_TOKENS):
+        #         generated_logit = logits[j, i, output_ids.sequences[j, i]].unsqueeze(0)
+        #         all_gen_logits_single = torch.cat((all_gen_logits_single, generated_logit), dim=-1)
+        #     all_gen_logits = torch.cat((all_gen_logits, all_gen_logits_single), dim=0)
+        #     # [G_samples, seq_leng]
+        all_gen_logits = torch.gather(logits, dim=-1, index=output_ids.sequences)
             # Move output back to CPU for decoding
-        output_ids = output_ids.cpu()
+        output_ids.sequences = output_ids.sequences.cpu()
         print(f'Computed G samples')
         # 2. Decode the response
         for i in range(G_samples):
-            all_responses.append(self.tokenizer.decode(output_ids[i], skip_special_tokens=True))
+            all_responses.append(self.tokenizer.decode(output_ids.sequences[i], skip_special_tokens=True))
 
         
         # 3. Compute rewards for every compeltion:
