@@ -53,7 +53,7 @@ class GRPOTtrainer:
         self.old_model = self.new_model.copy() # switch because we already computed stuff
 
         # after that we will do backprop on the new model, nice
-        
+
         # Move output back to CPU for decoding
         output_ids.sequences = output_ids.sequences.cpu()
         print(f'Computed G samples')
@@ -78,6 +78,7 @@ class GRPOTtrainer:
 
     def forward_get_log_probs(self, model, input, output_gen):
         # input shape: [G, M]
+        all_log_probs = torch.tensor([])
         for i in range(self.G_samples):
             input_tensor = torch.cat((input[i,:], output_gen[i,:]), dim=-1) # 1D
             attn = torch.ones_like(input_tensor) 
@@ -86,7 +87,8 @@ class GRPOTtrainer:
             gen_logits = logits.logits[input_length:-1]
             log_probs = F.log_softmax(gen_logits, dim=-1) # shape: []
             log_probs = torch.gather(log_probs, dim=-1, index=output_gen[i,:].unsqueeze(-1))
-        return log_probs
+            all_log_probs = torch.cat((all_log_probs, log_probs))
+        return all_log_probs
 snippet = """def f(x: int):
     return x**2"""
 input_args = '3'
