@@ -39,7 +39,7 @@ class GRPOTtrainer:
         
         # 3. Compute rewards for every compeltion:
 
-        rewards = torch.tensor([self.reward_fn(response, prompt, input_args, snippet) for response in all_responses])
+        rewards = torch.tensor([self.reward_fn(response, prompt, input_args, snippet) for response in all_responses], dtype=torch.float32)
         print(rewards)
         
         # generation = response.split(prompt)[-1].strip()
