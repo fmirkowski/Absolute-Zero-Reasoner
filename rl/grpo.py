@@ -1,5 +1,6 @@
 import torch
 from data.prompts import code_o_solver_prompt, instruction_following
+import torch.nn.functional as F
 
 # for each question q we sample X outputs o_1, o_2, .., o_x from that we get X rewards 
 class GRPOTtrainer:
@@ -43,6 +44,7 @@ class GRPOTtrainer:
         # more parallerlizable version:
         prompt_length = input_ids.input_ids.shape[1]  # Get length of input prompt
         all_gen_logits = torch.gather(logits, dim=-1, index=output_ids.sequences[:, prompt_length:].unsqueeze(-1)).squeeze(-1)
+        log_probs = F.log_softmax(all_gen_logits, dim=-1)
         
 
         # Move output back to CPU for decoding
