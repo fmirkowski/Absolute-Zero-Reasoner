@@ -43,9 +43,15 @@ class GRPOTtrainer:
 
         # more parallerlizable version:
         prompt_length = input_ids.input_ids.shape[1]  # Get length of input prompt
-        all_gen_logits = torch.gather(logits, dim=-1, index=output_ids.sequences[:, prompt_length:].unsqueeze(-1)).squeeze(-1)
-        log_probs = F.log_softmax(all_gen_logits, dim=-1)
+        sequences = output_ids.sequences[:, prompt_length:]
         
+        # Create attention mask (1 for real tokens, 0 for padding)
+        attention_mask = (sequences != self.tokenizer.pad_token_id).float()
+        
+        all_gen_logits = torch.gather(logits, dim=-1, index=sequences.unsqueeze(-1)).squeeze(-1)
+        # Apply mask to exclude pad tokens
+        all_gen_logits = all_gen_logits * attention_mask
+        log_probs = F.log_softmax(all_gen_logits, dim=-1)
 
         # Move output back to CPU for decoding
         output_ids.sequences = output_ids.sequences.cpu()
