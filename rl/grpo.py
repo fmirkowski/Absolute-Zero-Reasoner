@@ -73,10 +73,16 @@ class GRPOTtrainer:
         pass
 
     def forward_get_log_probs(self, model, input, output_gen):
+        # input shape: [G, M]
         for i in range(self.G_samples):
-            logits = model(torch.cat((input[i,:], output_gen[i,:]), dim=-1))
-            
-
+            input_tensor = torch.cat((input[i,:], output_gen[i,:]), dim=-1) # 1D
+            attn = torch.ones_like(input_tensor) 
+            logits = model(input_tensor, attention_mask=attn) 
+            input_length = input.shape[0]
+            gen_logits = logits.logits[input_length:-1]
+            log_probs = F.log_softmax(gen_logits, dim=-1) # shape: []
+            log_probs = torch.gather(log_probs, dim=-1, index=output_gen[i,:].unsqueeze(-1))
+        return log_probs
 snippet = """def f(x: int):
     return x**2"""
 input_args = '3'
