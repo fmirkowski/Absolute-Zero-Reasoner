@@ -47,7 +47,7 @@ def extract_input_output(extracted_content, problem_type):
         print(f"[ERROR] Error extracting input/output: {str(e)}")
         return None
         
-def reward_fn(output, snippet, input_arg, problem_type: str = "code_o") -> int:
+def reward_fn(model_output, prompt, snippet, input_arg, problem_type: str = "code_o") -> int:
     # Determine device
     # We tak snipet and input_arg, this is specific for a deduction task
     # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -74,7 +74,7 @@ def reward_fn(output, snippet, input_arg, problem_type: str = "code_o") -> int:
     # response = tokenizer.decode(output_ids[0], skip_special_tokens=True)
     # print(f'[INFO] THE WHOLE Generated response: {response}\n\n')
 
-    generation = output.split(prompt)[-1].strip()
+    generation = model_output.split(prompt)[-1].strip()
     generation = '<think>' + generation
     # print(f'[INFO] Generated response: {generation}')
     
@@ -105,16 +105,12 @@ def reward_fn(output, snippet, input_arg, problem_type: str = "code_o") -> int:
     # return answer
 
 # Specific for deduction not really modular, we can jusyt do :None later on
-snippet = """def f(x: int):
-    return x**2"""
-input_args = '3'
-task_prompt = code_o_solver_prompt.format(snippet=snippet, input_args=input_args)
-prompt = instruction_following.format(task_prompt)
-from transformers import AutoModelForCausalLM, AutoTokenizer
-# Load model and tokenizer
-model_name = "Qwen/Qwen3-4B"
-print(f"[INFO] Loading model: {model_name}")
-tokenizer = AutoTokenizer.from_pretrained(model_name)
-model = AutoModelForCausalLM.from_pretrained(model_name)
-result = reward_fn(prompt, model, tokenizer, snippet, input_args)
-print(f'[INFO] Final answer: {result}')
+
+# from transformers import AutoModelForCausalLM, AutoTokenizer
+# # Load model and tokenizer
+# model_name = "Qwen/Qwen3-4B"
+# print(f"[INFO] Loading model: {model_name}")
+# tokenizer = AutoTokenizer.from_pretrained(model_name)
+# model = AutoModelForCausalLM.from_pretrained(model_name)
+# result = reward_fn(prompt, snippet, input_args)
+# print(f'[INFO] Final answer: {result}')

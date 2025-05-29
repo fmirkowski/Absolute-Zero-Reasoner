@@ -1,0 +1,1 @@
+# empty, the purpose of this file is for the python to treat data directory as a package so I can import from it no matter how deep Im in some other directory and folder

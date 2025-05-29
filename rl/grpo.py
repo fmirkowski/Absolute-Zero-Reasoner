@@ -1,4 +1,5 @@
 import torch
+from data.prompts import code_o_solver_prompt, instruction_following
 
 # for each question q we sample X outputs o_1, o_2, .., o_x from that we get X rewards 
 class GRPOTtrainer:
@@ -8,8 +9,9 @@ class GRPOTtrainer:
         self.reward_fn = reward_fn
         self.optimizer = torch.optim.AdamW(model.parameters, lr=1e-6)
         self.device = device
-
-    def train_step(self, prompt, G_samples = 5):
+        self.ref_model = model
+    # input args and snippet are deduction specific ones
+    def train_step(self, prompt, input_args, snippet, G_samples = 5):
         all_responses = [] # [G,]
 
         # for i in range(G_samples):
@@ -17,7 +19,7 @@ class GRPOTtrainer:
         input_ids = self.tokenizer(prompt, return_tensors="pt").to(self.device)
         print('[INFO] Starting LLM generation')
         with torch.no_grad():
-            MAX_TOKENS = 256
+            MAX_TOKENS = 15
             output_ids = self.model.generate(
                 **input_ids,
                 max_new_tokens=MAX_TOKENS,
@@ -28,16 +30,39 @@ class GRPOTtrainer:
             )
             # [G_samples, seq_leng]
             # Move output back to CPU for decoding
-            output_ids = output_ids.cpu()
-            print(f'Computed G samples ')
-            # 2. Decode the response
-            for i in range(G_samples):
-                all_responses.append(self.tokenizer.decode(output_ids[i], skip_special_tokens=True))
+        output_ids = output_ids.cpu()
+        print(f'Computed G samples ')
+        # 2. Decode the response
+        for i in range(G_samples):
+            all_responses.append(self.tokenizer.decode(output_ids[i], skip_special_tokens=True))
 
-            
-            # 3. Compute rewards for every compeltion:
+        
+        # 3. Compute rewards for every compeltion:
 
-            rewards = [self.reward_fn(response) for response in all_responses]
-            # generation = response.split(prompt)[-1].strip()
+        rewards = [self.reward_fn(response, prompt, input_args, snippet) for response in all_responses]
+        print(rewards)
+        # generation = response.split(prompt)[-1].strip()
+        mean_reward = torch.mean(rewards)
+        std_reward = torch.std(rewards)
+        print(std_reward)
+
+        pass
+
+snippet = """def f(x: int):
+    return x**2"""
+input_args = '3'
+task_prompt = code_o_solver_prompt.format(snippet=snippet, input_args=input_args)
+prompt = instruction_following.format(task_prompt)
+
+from transformers import AutoModelForCausalLM, AutoTokenizer
+from solver_pipeline import reward_fn
+# # Load model and tokenizer
+model_name = "Qwen/Qwen3-4B"
+print(f"[INFO] Loading model: {model_name}")
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+model = AutoModelForCausalLM.from_pretrained(model_name)
+device = torch.device("cuda" if torch.cuda_is_available() else "cpu")
 
 
+train = GRPOTtrainer(model, tokenizer, reward_fn, device)
+train.train_step(prompt, input_args, snippet)
