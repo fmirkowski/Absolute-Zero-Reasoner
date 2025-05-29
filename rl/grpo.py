@@ -12,7 +12,7 @@ class GRPOTtrainer:
         self.device = device
         self.ref_model = model
     # input args and snippet are deduction specific ones
-    def train_step(self, prompt, input_args, snippet, G_samples = 5):
+    def train_step(self, prompt, input_args, snippet, G_samples = 2):
         all_responses = [] # [G,]
 
         # for i in range(G_samples):
@@ -20,7 +20,7 @@ class GRPOTtrainer:
         input_ids = self.tokenizer(prompt, return_tensors="pt").to(self.device)
         print('[INFO] Starting LLM generation')
         with torch.no_grad():
-            MAX_TOKENS = 15
+            MAX_TOKENS = 32
             output_ids = self.model.generate(
                 **input_ids,
                 max_new_tokens=MAX_TOKENS,
@@ -51,6 +51,7 @@ class GRPOTtrainer:
         all_gen_logits = torch.gather(logits, dim=-1, index=sequences.unsqueeze(-1)).squeeze(-1)
         # Apply mask to exclude pad tokens
         all_gen_logits = all_gen_logits * attention_mask
+        print('\n\n', torch.softmax(all_gen_logits[0]), '\n\n', torch.softmax(all_gen_logits[0]), '\n\n')
         log_probs = F.log_softmax(all_gen_logits, dim=-1)
 
         # Move output back to CPU for decoding
