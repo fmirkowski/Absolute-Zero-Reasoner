@@ -39,8 +39,13 @@ class GRPOTtrainer:
         #         all_gen_logits_single = torch.cat((all_gen_logits_single, generated_logit), dim=-1)
         #     all_gen_logits = torch.cat((all_gen_logits, all_gen_logits_single), dim=0)
         #     # [G_samples, seq_leng]
-        all_gen_logits = torch.gather(logits, dim=-1, index=output_ids.sequences)
-            # Move output back to CPU for decoding
+
+        # more parallerlizable version:
+        prompt_length = input_ids.input_ids.shape[1]  # Get length of input prompt
+        all_gen_logits = torch.gather(logits, dim=-1, index=output_ids.sequences[:, prompt_length:].unsqueeze(-1)).squeeze(-1)
+        
+
+        # Move output back to CPU for decoding
         output_ids.sequences = output_ids.sequences.cpu()
         print(f'Computed G samples')
         # 2. Decode the response
