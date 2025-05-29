@@ -11,8 +11,9 @@ class GRPOTtrainer:
         self.optimizer = torch.optim.AdamW(model.parameters(), lr=1e-6)
         self.device = device
         self.ref_model = model
+        self.G_samples = 2
     # input args and snippet are deduction specific ones
-    def train_step(self, prompt, input_args, snippet, G_samples = 2):
+    def train_step(self, prompt, input_args, snippet):
         all_responses = [] # [G,]
 
         # for i in range(G_samples):
@@ -27,24 +28,17 @@ class GRPOTtrainer:
                 do_sample=True,
                 temperature=0.7,
                 pad_token_id=self.tokenizer.eos_token_id,
-                num_return_sequences=G_samples,
+                num_return_sequences=self.G_samples,
                 output_scores=True,
                 return_dict_in_generate=True
             )
         # all_gen_logits_single = torch.tensor([])
         # all_gen_logits = torch.tensor([])
         logits = torch.stack(output_ids.scores, dim=1)  # Shape: [G_samples, max_tokens, vocab_size]
-        # for j in range(G_samples):
-        #     for i in range(MAX_TOKENS):
-        #         generated_logit = logits[j, i, output_ids.sequences[j, i]].unsqueeze(0)
-        #         all_gen_logits_single = torch.cat((all_gen_logits_single, generated_logit), dim=-1)
-        #     all_gen_logits = torch.cat((all_gen_logits, all_gen_logits_single), dim=0)
-        #     # [G_samples, seq_leng]
-
         # more parallerlizable version:
         prompt_length = input_ids.input_ids.shape[1]  # Get length of input prompt
         sequences = output_ids.sequences[:, prompt_length:]
-        
+        generated = sequences.copy()
         # Create attention mask (1 for real tokens, 0 for padding)
         attention_mask = (sequences != self.tokenizer.pad_token_id).float()
         
@@ -54,11 +48,13 @@ class GRPOTtrainer:
         print('\n\n', torch.softmax(all_gen_logits[0], dim=-1), '\n\n', torch.softmax(all_gen_logits[1], dim=-1), '\n\n')
         log_probs = F.log_softmax(all_gen_logits, dim=-1)
 
+        new_log_probs = self.forward_get_log_probs(self.model, input_ids.input_ids, generated)
+
         # Move output back to CPU for decoding
         output_ids.sequences = output_ids.sequences.cpu()
         print(f'Computed G samples')
         # 2. Decode the response
-        for i in range(G_samples):
+        for i in range(self.G_samples):
             all_responses.append(self.tokenizer.decode(output_ids.sequences[i], skip_special_tokens=True))
 
         
@@ -75,6 +71,11 @@ class GRPOTtrainer:
         print(std_reward)
 
         pass
+
+    def forward_get_log_probs(self, model, input, output_gen):
+        for i in range(self.G_samples):
+            logits = model(torch.cat((input[i,:], output_gen[i,:]), dim=-1))
+            
 
 snippet = """def f(x: int):
     return x**2"""
