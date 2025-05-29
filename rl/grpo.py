@@ -5,12 +5,13 @@ import torch.nn.functional as F
 # for each question q we sample X outputs o_1, o_2, .., o_x from that we get X rewards 
 class GRPOTtrainer:
     def __init__(self, model, tokenizer, reward_fn, device):
-        self.model = model
         self.tokenizer = tokenizer
         self.reward_fn = reward_fn
         self.optimizer = torch.optim.AdamW(model.parameters(), lr=1e-6)
         self.device = device
         self.ref_model = model
+        self.new_model = model
+        self.old_model = model 
         self.G_samples = 2
     # input args and snippet are deduction specific ones
     def train_step(self, prompt, input_args, snippet):
@@ -22,7 +23,7 @@ class GRPOTtrainer:
         print('[INFO] Starting LLM generation')
         with torch.no_grad():
             MAX_TOKENS = 32
-            output_ids = self.model.generate(
+            output_ids = self.old_model.generate(
                 **input_ids,
                 max_new_tokens=MAX_TOKENS,
                 do_sample=True,
