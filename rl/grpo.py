@@ -14,6 +14,7 @@ class GRPOTtrainer:
         self.old_model = model 
         self.G_samples = 2
         self.EPSILON = 0.9
+        self.BETA = 0.2
     # input args and snippet are deduction specific ones
     def train_step(self, prompt, input_args, snippet):
         all_responses = [] # [G,]
@@ -49,9 +50,13 @@ class GRPOTtrainer:
         all_gen_logits = all_gen_logits[padding_starts:]
         print('\n\n', torch.softmax(all_gen_logits[0], dim=-1), '\n\n', torch.softmax(all_gen_logits[1], dim=-1), '\n\n')
         log_probs = F.log_softmax(all_gen_logits, dim=-1).reshape(self.G_samples, -1)
+
         new_log_probs = self.forward_get_log_probs(self.new_model, input_ids.input_ids, generated).reshape(self.G_samples, -1)
         new_log_probs = new_log_probs[padding_starts:]
         assert log_probs.shape == new_log_probs.shape
+
+        refference_log_probs = self.forward_get_log_probs(self.ref_model, input_ids.input_ids, generated).reshape(self.G_samples, -1)
+        refference_log_probs = refference_log_probs[padding_starts:]
         self.old_model = self.new_model.copy() # switch because we already computed stuff
 
         # after that we will do backprop on the new model, nice
@@ -83,6 +88,8 @@ class GRPOTtrainer:
                 #remember to divide by G afterwards
                 log_d = new_log_probs[i, t] / log_probs[i, t]
                 ppo_sur = min(log_d * advantages[i], torch.clip(log_d, 1-self.EPSILON, 1+self.EPSILON) * advantages[i])
+                kl_divergence = refference_log_probs[i, t] / new_log_probs[i, t] - torch.log(refference_log_probs[i, t] / new_log_probs[i, t]) - 1
+                loss = ppo_sur - kl_divergence
                 
         pass
 
