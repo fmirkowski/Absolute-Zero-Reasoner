@@ -90,7 +90,8 @@ class GRPOTtrainer:
                 ppo_sur = min(log_d * advantages[i], torch.clip(log_d, 1-self.EPSILON, 1+self.EPSILON) * advantages[i])
                 kl_divergence = refference_log_probs[i, t] / new_log_probs[i, t] - torch.log(refference_log_probs[i, t] / new_log_probs[i, t]) - 1
                 loss = ppo_sur - kl_divergence
-                
+            loss = loss / log_probs.shape[-1]
+        loss = loss / self.G_samples
         pass
 
     def forward_get_log_probs(self, model, input, output_gen):
