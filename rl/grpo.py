@@ -61,7 +61,7 @@ model_name = "Qwen/Qwen3-4B"
 print(f"[INFO] Loading model: {model_name}")
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 model = AutoModelForCausalLM.from_pretrained(model_name)
-device = torch.device("cuda" if torch.cuda_is_available() else "cpu")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 train = GRPOTtrainer(model, tokenizer, reward_fn, device)
