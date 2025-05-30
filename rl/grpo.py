@@ -83,16 +83,37 @@ class GRPOTtrainer:
         print(std_reward)
 
         # objkective computation
-        for i in range(self.G_samples):
-            #remember to divide by G afterwards
-            for t in range(log_probs.shape[-1]):
-                #remember to divide by G afterwards
-                log_d = new_log_probs[i, t] / log_probs[i, t]
-                ppo_sur = torch.min(log_d * advantages[i], torch.clip(log_d, 1-self.EPSILON, 1+self.EPSILON) * advantages[i])
-                kl_divergence = torch.sum(torch.exp(ref_log_probs) * (ref_log_probs - new_log_probs))
-                loss = ppo_sur - kl_divergence * self.BETA
-            loss = loss / log_probs.shape[-1]
-        loss = loss / self.G_samples
+        loss = 0
+        batch_loss = 0
+        # for i in range(self.G_samples):
+        #     #remember to divide by G afterwards
+        #     for t in range(log_probs.shape[-1]):
+        #         #remember to divide by shape afterwards
+        #         log_d = new_log_probs[i, t] / log_probs[i, t]
+        #         ppo_sur = torch.min(log_d * advantages[i], torch.clip(log_d, 1-self.EPSILON, 1+self.EPSILON) * advantages[i])
+        #         ratio = torch.exp(refference_log_probs[i,t] / new_log_probs[i,t])
+        #         # kl_divergence = torch.sum(torch.exp(refference_log_probs) * (refference_log_probs - new_log_probs))
+        #         per_token_kl = ratio - (refference_log_probs - new_log_probs) - 1
+
+        #         loss += ppo_sur - kl_divergence * self.BETA
+        #     batch_loss += loss / log_probs.shape[-1]
+            
+        # av_loss = batch_loss / self.G_samples
+
+        # parallelised version:
+        log_d = new_log_probs / log_probs
+        clipped_log_d = torch.clamp(log_d, 1-self.EPSILON, 1+self.EPSILON)
+        ppo_sur = torch.min(log_d*advantages, clipped_log_d*advantages)
+        surrogate_loss = -ppo_sur.sum(dim=1).mean()  # scalar
+        
+        ratio = torch.exp(refference_log_probs / new_log_probs)
+        per_token_kl  = ratio - (refference_log_probs - new_log_probs) - 1
+        kl_penalty    = per_token_kl.sum(dim=1).mean()   
+        loss = kl_penalty + self.BETA * kl_penalty
+
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
         pass
 
     def forward_get_log_probs(self, model, input, output_gen):
