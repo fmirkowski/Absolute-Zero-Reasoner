@@ -35,6 +35,7 @@ class GRPOTtrainer:
                 output_scores=True,
                 return_dict_in_generate=True
             )
+
         # all_gen_logits_single = torch.tensor([])
         # all_gen_logits = torch.tensor([])
         logits = torch.stack(output_ids.scores, dim=1)  # Shape: [G_samples, max_tokens, vocab_size]
@@ -88,7 +89,7 @@ class GRPOTtrainer:
                 #remember to divide by G afterwards
                 log_d = new_log_probs[i, t] / log_probs[i, t]
                 ppo_sur = torch.min(log_d * advantages[i], torch.clip(log_d, 1-self.EPSILON, 1+self.EPSILON) * advantages[i])
-                kl_divergence = torch.exp(refference_log_probs[i, t]) * (refference_log_probs[i, t] - new_log_probs[i, t])
+                kl_divergence = torch.sum(torch.exp(ref_log_probs) * (ref_log_probs - new_log_probs))
                 loss = ppo_sur - kl_divergence * self.BETA
             loss = loss / log_probs.shape[-1]
         loss = loss / self.G_samples
