@@ -7,7 +7,7 @@ This is an experimental implementation of the [Absolute Zero paradigm](https://a
 
 This project is actively under development. Currently implementing:
 
-- Group Relative Policy Optimization (GRPO) to test and validate the solver component
+- Group Relative Policy Optimization (GRPO) to test and validate the solver component, building GRPO from scratch from DeepSeekMath paper (https://arxiv.org/pdf/2402.03300) instead of using ready solutions (VeRL as implemented in the paper) for educational purposes ;)
 
 
 
